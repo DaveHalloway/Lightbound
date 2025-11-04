@@ -24,17 +24,18 @@ public class GroundCheck : MonoBehaviour
     // Checks if the player is grounded, and sets the isGrounded variable accordingly in the PlayerMovement script
     private void CheckGround()
     {
-        float radius = 0.2f;
-        float distance = 0.2f;
+        //float distance = 0.05f;
         Vector2 origin = transform.position;
         Vector2 direction = Vector2.down;
         LayerMask layerMask = LayerMask.GetMask("Ground");
+        LayerMask layerMask1 = LayerMask.GetMask("Platform");
 
         // Perform the raycast
-        RaycastHit2D hit = Physics2D.CircleCast(origin, radius, direction, distance, layerMask);
+        RaycastHit2D hit = Physics2D.BoxCast(origin, new Vector2(0.3f, 0.05f), 0f, direction, 0.05f, layerMask);
+        RaycastHit2D hit1 = Physics2D.BoxCast(origin, new Vector2(0.3f, 0.05f), 0f, direction, 0.05f, layerMask1);
 
         // If the raycast hits a collider on the Ground layer, the player is grounded
-        if (hit.collider != null)
+        if (hit.collider != null || hit1.collider != null)
         {
             player.GetComponent<PlayerMovement>().isGrounded = true;
         }
