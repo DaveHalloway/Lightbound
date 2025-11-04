@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 3428202790488403462}
   - component: {fileID: 8343470097968267538}
   - component: {fileID: 3425764021853610023}
-  - component: {fileID: 1915257391277186508}
   - component: {fileID: 8077219808313195813}
+  - component: {fileID: 4819291067425080737}
+  - component: {fileID: 4497985435810520582}
   m_Layer: 0
   m_Name: Triangle
   m_TagString: Player
@@ -35,6 +36,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7548867033275026979}
+  - {fileID: 6083758042604868481}
   m_Father: {fileID: 3295824089906548897}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &3428202790488403462
@@ -134,8 +136,30 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!68 &1915257391277186508
-EdgeCollider2D:
+--- !u!95 &8077219808313195813
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 381846841428763216}
+  m_Enabled: 0
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d93ffd0a8ae3d2842be04f7d25a68796, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!70 &4819291067425080737
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -169,74 +193,61 @@ EdgeCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_EdgeRadius: 0
-  m_Points:
-  - {x: -0.40677893, y: -0.3535604}
-  - {x: -0.28816903, y: -0.5116702}
-  - {x: -0.22350597, y: -0.7242316}
-  - {x: -0.22099686, y: -0.98493135}
-  - {x: -0.18862236, y: -1.3319638}
-  - {x: -0.20155597, y: -1.5822777}
-  - {x: -0.35571265, y: -1.6647651}
-  - {x: -0.3757, y: -1.725782}
-  - {x: 0.21987534, y: -1.7461404}
-  - {x: 0.1878066, y: -1.511372}
-  - {x: 0.22742224, y: -1.475904}
-  - {x: 0.16827059, y: -1.0861762}
-  - {x: 0.21988392, y: -0.70865536}
-  - {x: 0.27950788, y: -0.5848024}
-  - {x: 0.3746245, y: -0.69276667}
-  - {x: 0.36736488, y: -0.84727466}
-  - {x: 0.57566047, y: -0.6358504}
-  - {x: 0.5768497, y: -0.40575755}
-  - {x: 0.37924314, y: -0.2126432}
-  - {x: 0.3640957, y: 0.5059365}
-  - {x: 0.21855712, y: 0.82678676}
-  - {x: 0.14742494, y: 0.87721527}
-  - {x: 0.35128212, y: 1.2393129}
-  - {x: 0.35535932, y: 1.4673448}
-  - {x: 0.43545508, y: 1.4885569}
-  - {x: 0.4619279, y: 1.6848066}
-  - {x: 0.3386476, y: 1.7751024}
-  - {x: 0.1763866, y: 1.7350373}
-  - {x: 0.10382891, y: 1.6617546}
-  - {x: -0.2000916, y: 1.6391745}
-  - {x: -0.3661847, y: 1.2109253}
-  - {x: -0.5979519, y: 1.0703061}
-  - {x: -0.59900033, y: 0.9071256}
-  - {x: -0.2035973, y: 0.8731924}
-  - {x: -0.22009957, y: 0.7742331}
-  - {x: -0.3326776, y: 0.67978716}
-  - {x: -0.34743524, y: 0.24793816}
-  - {x: -0.4355508, y: 0.1096257}
-  - {x: -0.4131881, y: -0.02192974}
-  - {x: -0.41165924, y: -0.3532294}
-  m_AdjacentStartPoint: {x: 0, y: 0}
-  m_AdjacentEndPoint: {x: 0, y: 0}
-  m_UseAdjacentStartPoint: 0
-  m_UseAdjacentEndPoint: 0
---- !u!95 &8077219808313195813
-Animator:
-  serializedVersion: 7
+  m_Size: {x: 1.2817211, y: 3.59}
+  m_Direction: 0
+--- !u!114 &4497985435810520582
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 381846841428763216}
   m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: d93ffd0a8ae3d2842be04f7d25a68796, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 808367ab144eda840871924297f6e52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  snowballPrefab: {fileID: 3832380920006464949, guid: 45081a0958e56bf41b5dc5c94481313d, type: 3}
+  firePoint: {fileID: 6083758042604868481}
+  maxSnowballs: 3
+  shootCooldown: 0.5
+  snowballSpeed: 10
+  rechargeRate: 1
+  isNearSnowPile: 0
+  chargeBarParent: {fileID: 0}
+  chargeBarFill: {fileID: 0}
+  ammoCounter: {fileID: 0}
+--- !u!1 &1703500480315254235
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6083758042604868481}
+  m_Layer: 0
+  m_Name: firePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 4422084297763085224, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6083758042604868481
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1703500480315254235}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.03, y: -0.02, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2325846154983730132}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2104491549100904968
 GameObject:
   m_ObjectHideFlags: 0

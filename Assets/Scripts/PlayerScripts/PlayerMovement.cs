@@ -94,8 +94,18 @@ public class PlayerMovement : MonoBehaviour
         if (anim != null)
         {
             anim.SetFloat("Speed", Mathf.Abs(rb.linearVelocity.x)); // run speed
-            anim.SetBool("isGrounded", isGrounded); // jump/land
+            //anim.SetBool("isGrounded", isGrounded); // jump/land
         }
+    }
+
+    public bool IsFacingRight()
+    {
+        return sprite.flipX; // true if facing right
+    }
+
+    public bool CanAttack()
+    {
+        return isGrounded && movement == 0f; // can attack if grounded and not moving
     }
     #endregion
 }

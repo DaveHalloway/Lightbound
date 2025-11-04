@@ -2,36 +2,55 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    #region Variables
-    [SerializeField] Transform player;  // The player transform to follow
+    [Header("Follow Targets")]
+    [SerializeField] Transform dayPlayer;
+    [SerializeField] Transform nightPlayer;
 
-    [SerializeField] float followSpeed = 5f;  // How fast the camera follows
-    [SerializeField] Vector2 offset = Vector2.zero; // Optional offset for fine-tuning
+    [Header("Camera Follow Settings")]
+    [SerializeField] float followSpeed = 5f;
+    [SerializeField] Vector2 offset = Vector2.zero;
 
-    [SerializeField] float aheadDistance = 2f; // How far ahead camera looks
-    [SerializeField] float aheadSpeed = 3f;    // How quickly the lookahead reacts
+    [Header("Look Ahead")]
+    [SerializeField] float aheadDistance = 2f;
+    [SerializeField] float aheadSpeed = 3f;
 
+    Transform currentTarget;
     float lookAheadX;
-    #endregion
 
-    #region Unity Methods
+    void Start()
+    {
+        currentTarget = WorldShiftManager.isDay ? dayPlayer : nightPlayer;
+
+        // Subscribe to day/night change event
+        WorldShiftEvents.OnWorldShift += OnWorldShift;
+    }
+
+    void OnDestroy()
+    {
+        // Always unsubscribe
+        WorldShiftEvents.OnWorldShift -= OnWorldShift;
+    }
+
     void FixedUpdate()
     {
-        if (player == null) return; // Safety check
+        if (currentTarget == null) return;
 
-        // Calculate horizontal look-ahead based on facing direction
-        float targetLookAhead = aheadDistance * Mathf.Sign(player.localScale.x);
+        float direction = Mathf.Sign(currentTarget.localScale.x);
+        float targetLookAhead = aheadDistance * direction;
         lookAheadX = Mathf.Lerp(lookAheadX, targetLookAhead, Time.deltaTime * aheadSpeed);
 
-        // Target position includes both X and Y from player
         Vector3 targetPosition = new Vector3(
-            player.position.x + lookAheadX + offset.x,
-            player.position.y + offset.y,
+            currentTarget.position.x + lookAheadX + offset.x,
+            currentTarget.position.y + offset.y,
             transform.position.z
         );
 
-        // Smooth follow
         transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * followSpeed);
     }
-    #endregion
+
+    void OnWorldShift(bool isDay)
+    {
+        currentTarget = isDay ? dayPlayer : nightPlayer;
+        Debug.Log($"Camera now following: {currentTarget.name}");
+    }
 }
