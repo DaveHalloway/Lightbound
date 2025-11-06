@@ -15,8 +15,8 @@ GameObject:
   - component: {fileID: 8077219808313195813}
   - component: {fileID: 4819291067425080737}
   - component: {fileID: 4497985435810520582}
-  m_Layer: 0
-  m_Name: Triangle
+  m_Layer: 3
+  m_Name: nightPlayer
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -258,7 +258,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3295824089906548897}
   m_Layer: 0
-  m_Name: Player
+  m_Name: NightPlayer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
