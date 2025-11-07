@@ -5,7 +5,7 @@ public class Snowball : MonoBehaviour
     private Rigidbody2D rb;
     public int damage = 1;
 
-    void Awake()
+    void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         if (rb == null)

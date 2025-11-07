@@ -6,7 +6,6 @@ using System.Collections;
 public class TextChange : MonoBehaviour
 {
     #region Variables
-    [SerializeField] Text uiText;
     [SerializeField] TextMeshProUGUI tmpText;
     [SerializeField] string newText;
     [SerializeField] string originalText = "";
@@ -23,8 +22,6 @@ public class TextChange : MonoBehaviour
     private void Awake()
     {
         // Store the starting text if not set manually
-        if (uiText != null && string.IsNullOrEmpty(originalText))
-            originalText = uiText.text;
         if (tmpText != null && string.IsNullOrEmpty(originalText))
             originalText = tmpText.text;
     }
@@ -91,13 +88,6 @@ public class TextChange : MonoBehaviour
     // Helper to set alpha
     private void SetAlpha(float alpha)
     {
-        if (uiText != null)
-        {
-            Color c = uiText.color;
-            c.a = alpha;
-            uiText.color = c;
-        }
-
         if (tmpText != null)
         {
             Color c = tmpText.color;
@@ -109,7 +99,6 @@ public class TextChange : MonoBehaviour
     // Helper to set text
     private void SetText(string text)
     {
-        if (uiText != null) uiText.text = text;
         if (tmpText != null) tmpText.text = text;
     }
     #endregion

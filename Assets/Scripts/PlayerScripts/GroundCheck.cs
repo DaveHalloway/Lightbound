@@ -3,14 +3,17 @@ using UnityEngine;
 public class GroundCheck : MonoBehaviour
 {
     #region Variables
-    GameObject player;
+    PlayerMovement player;
+    [SerializeField] Vector2 boxSize = new Vector2(0.3f, 0.05f);
+    [SerializeField] float castDistance = 0.05f;
+    [SerializeField] LayerMask groundLayers; // combine Ground + Platform in Inspector
     #endregion
 
     #region Unity Methods
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        player = gameObject.transform.parent.gameObject;
+        player = GetComponentInParent<PlayerMovement>();
     }
 
     // Update is called once per frame
@@ -22,27 +25,26 @@ public class GroundCheck : MonoBehaviour
 
     #region Custom Methods
     // Checks if the player is grounded, and sets the isGrounded variable accordingly in the PlayerMovement script
-    private void CheckGround()
+    void CheckGround()
     {
-        //float distance = 0.05f;
         Vector2 origin = transform.position;
         Vector2 direction = Vector2.down;
-        LayerMask layerMask = LayerMask.GetMask("Ground");
-        LayerMask layerMask1 = LayerMask.GetMask("Platform");
 
-        // Perform the raycast
-        RaycastHit2D hit = Physics2D.BoxCast(origin, new Vector2(0.3f, 0.05f), 0f, direction, 0.05f, layerMask);
-        RaycastHit2D hit1 = Physics2D.BoxCast(origin, new Vector2(0.3f, 0.05f), 0f, direction, 0.05f, layerMask1);
+        // Perform a boxcast downward to check for ground
+        RaycastHit2D hit = Physics2D.BoxCast(origin, boxSize, 0f, direction, castDistance, groundLayers);
 
-        // If the raycast hits a collider on the Ground layer, the player is grounded
-        if (hit.collider != null || hit1.collider != null)
-        {
-            player.GetComponent<PlayerMovement>().isGrounded = true;
-        }
-        else
-        {
-            player.GetComponent<PlayerMovement>().isGrounded = false;
-        }
+        bool grounded = hit.collider != null;
+        player.isGrounded = grounded;
+
+        // Debug visualization
+        Color rayColor = grounded ? Color.green : Color.red;
+        Debug.DrawRay(origin, direction * castDistance, rayColor);
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireCube(transform.position - Vector3.up * castDistance, boxSize);
     }
     #endregion
 }

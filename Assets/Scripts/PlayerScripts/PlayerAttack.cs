@@ -115,7 +115,7 @@ public class PlayerAttack : MonoBehaviour
     void UpdateAmmoUI()
     {
         if (ammoCounter != null)
-            ammoCounter.text = currentSnowballs.ToString();
+            ammoCounter.text = currentSnowballs.ToString() + "/3";
     }
 
     void MirrorFirePoint()
