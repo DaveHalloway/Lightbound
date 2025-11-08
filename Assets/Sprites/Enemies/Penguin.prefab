@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 8142899106670217279}
   - component: {fileID: 8831902519741631902}
   - component: {fileID: 1486856281664310291}
-  - component: {fileID: 453141984795535730}
+  - component: {fileID: 8433462725537725626}
   m_Layer: 8
   m_Name: Circle
   m_TagString: Enemy
@@ -80,8 +80,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Sprite: {fileID: -916001212652050976, guid: 96c4a41743faa0d42ac06a52fb24ee75, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -151,8 +151,8 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!58 &453141984795535730
-CircleCollider2D:
+--- !u!61 &8433462725537725626
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -185,8 +185,18 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.000000059604645}
-  m_Radius: 0.5
+  m_Offset: {x: -0.0139119625, y: 0.090418965}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 3.53, y: 1.07}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 3.5578237, y: 0.88916224}
+  m_EdgeRadius: 0
 --- !u!1 &7863569186944640907
 GameObject:
   m_ObjectHideFlags: 0
