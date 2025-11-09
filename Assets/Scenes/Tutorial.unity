@@ -2095,6 +2095,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Penguin
       objectReference: {fileID: 0}
+    - target: {fileID: 8142899106670217279, guid: 9c31c09fe020995479a2bf0425be9842, type: 3}
+      propertyPath: knockbackForce
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 8433462725537725626, guid: 9c31c09fe020995479a2bf0425be9842, type: 3}
       propertyPath: m_Size.x
       value: 3.1630707

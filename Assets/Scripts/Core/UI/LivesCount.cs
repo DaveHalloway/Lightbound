@@ -5,21 +5,22 @@ using System.Collections;
 public class LivesCount : MonoBehaviour
 {
     #region Variables
-    [SerializeField] TextMeshProUGUI tmpText;
+    [SerializeField] private TextMeshProUGUI tmpText;
     public static int livesAmount = 3;
 
     public static LivesCount instance;
 
-    static bool isInvulnerable = false;
-    static float invulnerabilityTime = 1.0f;
-    static float blinkInterval = 0.15f;
+    private static bool isInvulnerable = false;
+    private static float invulnerabilityTime = 1.0f;
+    private static float blinkInterval = 0.15f;
 
-    [SerializeField] SpriteRenderer playerSprite;
+    [SerializeField] private SpriteRenderer playerSprite;
     #endregion
 
     #region Unity Methods
-    void Awake()
+    private void Awake()
     {
+        // Singleton pattern
         if (instance == null)
             instance = this;
         else if (instance != this)
@@ -47,6 +48,7 @@ public class LivesCount : MonoBehaviour
 
     public static void LoseLife()
     {
+        // Prevent losing life while invulnerable
         if (isInvulnerable) return;
 
         livesAmount--;
@@ -69,7 +71,7 @@ public class LivesCount : MonoBehaviour
         UpdateTextUI();
     }
 
-    IEnumerator InvulnerabilityRoutine()
+    private IEnumerator InvulnerabilityRoutine()
     {
         isInvulnerable = true;
         float elapsed = 0f;
@@ -82,7 +84,7 @@ public class LivesCount : MonoBehaviour
                 playerSprite = playerObj.GetComponent<SpriteRenderer>();
         }
 
-        // Blink effect
+        // Blink effect during invulnerability
         if (playerSprite != null)
         {
             while (elapsed < invulnerabilityTime)
@@ -96,11 +98,33 @@ public class LivesCount : MonoBehaviour
         }
         else
         {
-            // if no sprite found, just wait the invulnerability time
+            // If no sprite found, just wait the invulnerability time
             yield return new WaitForSeconds(invulnerabilityTime);
         }
 
         isInvulnerable = false;
+    }
+
+    /// <summary>
+    /// Enables or disables invulnerability manually.
+    /// Used for things like ground pounds or power-ups.
+    /// </summary>
+    /// <param name="value">True = Invulnerable, False = Vulnerable</param>
+    public static void SetInvulnerable(bool value)
+    {
+        isInvulnerable = value;
+
+        // Ensure player sprite is visible when toggling manually
+        if (instance != null && instance.playerSprite != null && value)
+            instance.playerSprite.enabled = true;
+    }
+
+    /// <summary>
+    /// Returns whether the player is currently invulnerable.
+    /// </summary>
+    public static bool IsInvulnerable()
+    {
+        return isInvulnerable;
     }
     #endregion
 }

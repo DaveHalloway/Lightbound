@@ -41,6 +41,14 @@ public class PlayerMovement : MonoBehaviour
 
     private bool jumpRequested;
     private float movement;
+
+    // ?? GROUND POUND VARIABLES
+    [Header("Ground Pound Settings")]
+    [SerializeField] private float groundPoundSpeed = -25f;
+    [SerializeField] private float groundPoundCooldown = 1f;
+    [SerializeField] private KeyCode groundPoundKey = KeyCode.S;
+    private bool isGroundPounding = false;
+    private float lastGroundPoundTime;
     #endregion
 
     #region Unity Methods
@@ -55,6 +63,12 @@ public class PlayerMovement : MonoBehaviour
     {
         movement = Input.GetAxisRaw("Horizontal");
         UpdateSpriteDirection();
+
+        // ?? GROUND POUND INPUT
+        if (Input.GetKeyDown(groundPoundKey))
+        {
+            TryGroundPound();
+        }
 
         // Jump input
         if (Input.GetKeyDown(KeyCode.Space))
@@ -85,7 +99,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // Apply horizontal input if not sliding or during slide-jump
-        if (!isSliding && !isSlideJumping)
+        if (!isSliding && !isSlideJumping && !isGroundPounding)
         {
             rb.linearVelocity = new Vector2(movement * moveSpeed, rb.linearVelocity.y);
         }
@@ -95,6 +109,10 @@ public class PlayerMovement : MonoBehaviour
         {
             jumpCount = 0;
             canDoubleJump = true;
+
+            // ?? If we were ground pounding, stop once we hit ground
+            if (isGroundPounding)
+                StopGroundPound();
         }
 
         UpdateAnimations();
@@ -116,6 +134,12 @@ public class PlayerMovement : MonoBehaviour
             if (slideJumpTimer <= 0f)
                 isSlideJumping = false;
         }
+
+        // ?? Ground pound downward force
+        if (isGroundPounding)
+        {
+            rb.linearVelocity = new Vector2(0, groundPoundSpeed);
+        }
     }
     #endregion
 
@@ -132,6 +156,9 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Time.time - lastJumpTime < doubleJumpCooldown)
             return;
+
+        if (isGroundPounding)
+            return; // can't jump while pounding
 
         // Jumping from slide
         if (isSliding)
@@ -204,7 +231,42 @@ public class PlayerMovement : MonoBehaviour
         if (anim != null)
         {
             anim.SetFloat("Speed", Mathf.Abs(rb.linearVelocity.x));
+            anim.SetBool("GroundPound", isGroundPounding); // optional animator trigger
         }
+    }
+
+    // ?? GROUND POUND LOGIC
+    private void TryGroundPound()
+    {
+        if (isGrounded || isSliding)
+            return;
+
+        if (Time.time - lastGroundPoundTime < groundPoundCooldown)
+            return;
+
+        StartGroundPound();
+    }
+
+    private void StartGroundPound()
+    {
+        isGroundPounding = true;
+        lastGroundPoundTime = Time.time;
+
+        // make player invulnerable while pounding
+        LivesCount.SetInvulnerable(true);
+
+        rb.linearVelocity = Vector2.zero; // reset movement before slamming
+        rb.gravityScale = 1f; // ensure gravity is normal
+
+        if (anim != null)
+            anim.SetTrigger("GroundPound"); // optional animation trigger
+    }
+
+    private void StopGroundPound()
+    {
+        isGroundPounding = false;
+        LivesCount.SetInvulnerable(false); // no longer invulnerable
+        Debug.Log("Ground Pound finished");
     }
 
     public bool IsFacingRight()
