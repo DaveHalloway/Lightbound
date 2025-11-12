@@ -1,24 +1,30 @@
 using System.Collections;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
     #region Variables
+    [Header("Patrol Settings")]
     public float patrolSpeed = 2f;
     public float patrolRange = 5f;
 
+    [Header("Chase Settings")]
     public float chaseSpeed = 4f;
     public float chaseRange = 5f;
 
+    [Header("Attack Settings")]
     public float attackRange = 1.2f;
-
     public Transform player;
 
-    EnemyAttack enemyAttack;
-    Vector2 startPoint;
-    bool movingRight = true;
-    bool isAttacking = false;
+    [Header("Animation")]
+    public Animator anim;
+
+    private EnemyAttack enemyAttack;
+    private Vector2 startPoint;
+    private bool movingRight = true;
+    private bool isAttacking = false;
+
+    private Rigidbody2D rb;
     #endregion
 
     #region Unity Methods
@@ -26,9 +32,14 @@ public class EnemyMovement : MonoBehaviour
     {
         startPoint = transform.position;
         enemyAttack = GetComponent<EnemyAttack>();
+        rb = GetComponent<Rigidbody2D>();
+
+        // Ensure animator is assigned
+        if (anim == null)
+            anim = GetComponent<Animator>();
     }
 
-    void Update()
+    private void Update()
     {
         if (player == null) return;
         if (isAttacking) return;
@@ -37,7 +48,6 @@ public class EnemyMovement : MonoBehaviour
 
         if (distanceToPlayer <= attackRange)
         {
-            Debug.Log("Within attack range!");
             StartCoroutine(AttackSequence());
         }
         else if (distanceToPlayer <= chaseRange)
@@ -47,6 +57,13 @@ public class EnemyMovement : MonoBehaviour
         else
         {
             Patrol();
+        }
+
+        // Update animation parameters
+        if (anim != null)
+        {
+            anim.SetFloat("Speed", Mathf.Abs(rb.linearVelocity.x));
+            anim.SetBool("IsAttacking", isAttacking);
         }
     }
     #endregion
@@ -59,17 +76,20 @@ public class EnemyMovement : MonoBehaviour
         yield return new WaitForSeconds(enemyAttack.attackCooldown);
         isAttacking = false;
     }
+
     void Patrol()
     {
         float moveDirection = movingRight ? 1f : -1f;
-        transform.Translate(Vector2.right * moveDirection * patrolSpeed * Time.deltaTime);
+        Vector2 velocity = new Vector2(moveDirection * patrolSpeed, rb.linearVelocity.y);
+        rb.linearVelocity = velocity;
 
-        if(movingRight && transform.position.x >= startPoint.x + patrolRange)
+        // Check patrol boundaries
+        if (movingRight && transform.position.x >= startPoint.x + patrolRange)
         {
             movingRight = false;
             Flip();
         }
-        else if(!movingRight && transform.position.x <= startPoint.x - patrolRange)
+        else if (!movingRight && transform.position.x <= startPoint.x - patrolRange)
         {
             movingRight = true;
             Flip();
@@ -79,7 +99,7 @@ public class EnemyMovement : MonoBehaviour
     void ChasePlayer()
     {
         Vector2 direction = (player.position - transform.position).normalized;
-        transform.position += (Vector3)(direction * chaseSpeed * Time.deltaTime);
+        rb.linearVelocity = new Vector2(direction.x * chaseSpeed, rb.linearVelocity.y);
 
         if (direction.x > 0 && !movingRight)
         {
@@ -96,7 +116,7 @@ public class EnemyMovement : MonoBehaviour
     void Flip()
     {
         Vector3 scale = transform.localScale;
-        scale.x *= -1;
+        scale.x = Mathf.Abs(scale.x) * (movingRight ? 1f : -1f);
         transform.localScale = scale;
     }
 
@@ -109,7 +129,8 @@ public class EnemyMovement : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, attackRange);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawLine(new Vector2(startPoint.x - patrolRange, startPoint.y), new Vector2(startPoint.x + patrolRange, startPoint.y));
+        Gizmos.DrawLine(new Vector2(transform.position.x - patrolRange, transform.position.y),
+                        new Vector2(transform.position.x + patrolRange, transform.position.y));
     }
     #endregion
 }

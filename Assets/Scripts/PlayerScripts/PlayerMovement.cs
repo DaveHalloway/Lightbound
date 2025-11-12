@@ -1,32 +1,39 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class PlayerMovement : MonoBehaviour
 {
     #region Variables
-    Rigidbody2D rb;
-    SpriteRenderer sprite;
-    Animator anim;
+    private Rigidbody2D rb;
+    private SpriteRenderer sprite;
+    private Animator anim;
 
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 10f;
-    public bool isGrounded;
+    private float movement;
 
     [Header("Double Jump Settings")]
-    [SerializeField] private float doubleJumpForce = 12f;
-    [SerializeField] private float doubleJumpCooldown = 0.25f;
-    [SerializeField] private int maxJumps = 2;
-    private int jumpCount;
-    private bool canDoubleJump = true;
+    [SerializeField] private int maxJumps = 2; // double jump
+    private int jumpCount = 0;
+    private bool jumpRequested = false;
+    [SerializeField] private float jumpCooldown = 0.1f;
     private float lastJumpTime;
+
+    [Header("Ground Check")]
+    public bool isGrounded;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private LayerMask groundLayers;
 
     [Header("Sliding Settings")]
     [SerializeField] private float slopeCheckDistance = 0.5f;
     [SerializeField] private float maxSlopeAngle = 5f;
     [SerializeField] private float maxSlideSpeed = 8f;
     [SerializeField] private float slideAcceleration = 20f;
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float groundCheckOffset = 1f;
+    [SerializeField] private LayerMask slopeLayer;
+    [SerializeField] private float groundCheckOffset = 0.1f;
 
     private bool isSliding;
     private bool slideInput;
@@ -39,10 +46,6 @@ public class PlayerMovement : MonoBehaviour
     private float retainedHorizontalSpeed = 0f;
     private bool isSlideJumping = false;
 
-    private bool jumpRequested;
-    private float movement;
-
-    // ?? GROUND POUND VARIABLES
     [Header("Ground Pound Settings")]
     [SerializeField] private float groundPoundSpeed = -25f;
     [SerializeField] private float groundPoundCooldown = 1f;
@@ -54,8 +57,8 @@ public class PlayerMovement : MonoBehaviour
     #region Unity Methods
     private void Start()
     {
-        sprite = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
+        sprite = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
     }
 
@@ -64,12 +67,6 @@ public class PlayerMovement : MonoBehaviour
         movement = Input.GetAxisRaw("Horizontal");
         UpdateSpriteDirection();
 
-        // ?? GROUND POUND INPUT
-        if (Input.GetKeyDown(groundPoundKey))
-        {
-            TryGroundPound();
-        }
-
         // Jump input
         if (Input.GetKeyDown(KeyCode.Space))
             jumpRequested = true;
@@ -77,56 +74,34 @@ public class PlayerMovement : MonoBehaviour
         // Slide input
         slideInput = Input.GetKey(KeyCode.F);
 
-        // Check slope
+        // Ground pound input
+        if (Input.GetKeyDown(groundPoundKey))
+            TryGroundPound();
+
         CheckSlope();
 
-        // Handle jump
         if (jumpRequested)
         {
             Jump();
             jumpRequested = false;
         }
 
-        // Determine if should start or stop sliding
-        if (slideInput && isGrounded && slopeDownAngle > maxSlopeAngle)
-        {
-            if (!isSliding && !isSlideJumping)
-                isSliding = true;
-        }
-        else if (!slideInput || slopeDownAngle <= maxSlopeAngle || !isGrounded)
-        {
-            StopSlide();
-        }
-
-        // Apply horizontal input if not sliding or during slide-jump
-        if (!isSliding && !isSlideJumping && !isGroundPounding)
-        {
-            rb.linearVelocity = new Vector2(movement * moveSpeed, rb.linearVelocity.y);
-        }
-
-        // Reset jump count when grounded
-        if (isGrounded && !jumpRequested)
-        {
-            jumpCount = 0;
-            canDoubleJump = true;
-
-            // ?? If we were ground pounding, stop once we hit ground
-            if (isGroundPounding)
-                StopGroundPound();
-        }
-
+        HandleSliding();
+        ResetJumpOnGround();
         UpdateAnimations();
     }
 
     private void FixedUpdate()
     {
-        // Slide movement with smooth acceleration
-        if (isSliding && !isSlideJumping)
-        {
-            Slide();
-        }
+        // Apply horizontal movement
+        if (!isSliding && !isSlideJumping && !isGroundPounding)
+            rb.linearVelocity = new Vector2(movement * moveSpeed, rb.linearVelocity.y);
 
-        // Slide-jump horizontal momentum
+        // Slide movement
+        if (isSliding && !isSlideJumping)
+            Slide();
+
+        // Slide jump momentum
         if (isSlideJumping)
         {
             rb.linearVelocity = new Vector2(retainedHorizontalSpeed, rb.linearVelocity.y);
@@ -135,68 +110,73 @@ public class PlayerMovement : MonoBehaviour
                 isSlideJumping = false;
         }
 
-        // ?? Ground pound downward force
+        // Ground pound downward velocity
         if (isGroundPounding)
-        {
             rb.linearVelocity = new Vector2(0, groundPoundSpeed);
-        }
+
+        // Ground check
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayers);
     }
     #endregion
 
     #region Custom Methods
     private void UpdateSpriteDirection()
     {
-        if (movement > 0f)
-            sprite.flipX = true;
-        else if (movement < 0f)
-            sprite.flipX = false;
+        if (movement > 0)
+            sprite.flipX = true; // facing right
+        else if (movement < 0)
+            sprite.flipX = false; // facing left
     }
 
     private void Jump()
     {
-        if (Time.time - lastJumpTime < doubleJumpCooldown)
+        if (Time.time - lastJumpTime < jumpCooldown || isGroundPounding)
             return;
 
-        if (isGroundPounding)
-            return; // can't jump while pounding
-
-        // Jumping from slide
+        // Slide jump
         if (isSliding)
         {
             retainedHorizontalSpeed = rb.linearVelocity.x;
             slideJumpTimer = slideJumpRetentionTime;
             isSlideJumping = true;
-            StopSlide();
+            isSliding = false;
         }
 
         if (isGrounded)
+            jumpCount = 0; // Reset jumps on ground
+
+        if (jumpCount < maxJumps)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            jumpCount = 1;
-            canDoubleJump = true;
-            lastJumpTime = Time.time;
-        }
-        else if (canDoubleJump && jumpCount < maxJumps)
-        {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, doubleJumpForce);
             jumpCount++;
-            canDoubleJump = false;
             lastJumpTime = Time.time;
+            isGrounded = false;
+        }
+    }
+
+    private void HandleSliding()
+    {
+        if (slideInput && isGrounded && slopeDownAngle > maxSlopeAngle)
+        {
+            if (!isSliding && !isSlideJumping)
+                isSliding = true;
+        }
+        else if (!slideInput || slopeDownAngle <= maxSlopeAngle || !isGrounded)
+        {
+            isSliding = false;
         }
     }
 
     private void CheckSlope()
     {
-        Vector2 checkPos = transform.position - new Vector3(0f, groundCheckOffset, 0f);
-        RaycastHit2D hit = Physics2D.Raycast(checkPos, Vector2.down, slopeCheckDistance, groundLayer);
+        Vector2 checkPos = (Vector2)transform.position - new Vector2(0f, groundCheckOffset);
+        RaycastHit2D hit = Physics2D.Raycast(checkPos, Vector2.down, slopeCheckDistance, slopeLayer);
 
         if (hit)
         {
             slopeNormalPerp = Vector2.Perpendicular(hit.normal).normalized;
-
             if (slopeNormalPerp.y > 0)
                 slopeNormalPerp *= -1f;
-
             slopeDownAngle = Vector2.Angle(hit.normal, Vector2.up);
 
             Debug.DrawRay(hit.point, hit.normal, Color.red);
@@ -212,30 +192,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void Slide()
     {
-        // Smooth slide acceleration along slope
         Vector2 slideDirection = slopeNormalPerp.normalized;
         Vector2 targetVelocity = slideDirection * maxSlideSpeed;
         rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, targetVelocity, slideAcceleration * Time.fixedDeltaTime);
     }
 
-    private void StopSlide()
+    private void ResetJumpOnGround()
     {
-        if (isSliding)
-        {
-            isSliding = false;
-        }
+        if (isGrounded && !isGroundPounding)
+            jumpCount = 0;
     }
 
-    private void UpdateAnimations()
-    {
-        if (anim != null)
-        {
-            anim.SetFloat("Speed", Mathf.Abs(rb.linearVelocity.x));
-            anim.SetBool("GroundPound", isGroundPounding); // optional animator trigger
-        }
-    }
-
-    // ?? GROUND POUND LOGIC
     private void TryGroundPound()
     {
         if (isGrounded || isSliding)
@@ -251,32 +218,73 @@ public class PlayerMovement : MonoBehaviour
     {
         isGroundPounding = true;
         lastGroundPoundTime = Time.time;
-
-        // make player invulnerable while pounding
         LivesCount.SetInvulnerable(true);
 
-        rb.linearVelocity = Vector2.zero; // reset movement before slamming
-        rb.gravityScale = 1f; // ensure gravity is normal
+        rb.linearVelocity = Vector2.zero;
+        rb.gravityScale = 1f;
 
         if (anim != null)
-            anim.SetTrigger("GroundPound"); // optional animation trigger
+            anim.SetTrigger("GroundPound");
     }
 
     private void StopGroundPound()
     {
         isGroundPounding = false;
-        LivesCount.SetInvulnerable(false); // no longer invulnerable
-        Debug.Log("Ground Pound finished");
+        LivesCount.SetInvulnerable(false);
+    }
+
+    private void UpdateAnimations()
+    {
+        if (anim != null)
+        {
+            anim.SetFloat("Speed", Mathf.Abs(rb.linearVelocity.x));
+            anim.SetBool("GroundPound", isGroundPounding);
+        }
     }
 
     public bool IsFacingRight()
     {
         return sprite.flipX;
     }
+    #endregion
 
-    public bool CanAttack()
+    #region World Shift Support
+    public void CopyStateTo(PlayerMovement target)
     {
-        return isGrounded && movement == 0f;
+        if (target == null)
+            return;
+
+        // Try to assign missing components safely
+        if (target.rb == null)
+            target.rb = target.GetComponent<Rigidbody2D>();
+        if (target.sprite == null)
+            target.sprite = target.GetComponent<SpriteRenderer>();
+
+        if (rb == null)
+            rb = GetComponent<Rigidbody2D>();
+        if (sprite == null)
+            sprite = GetComponent<SpriteRenderer>();
+
+        // Copy transform and motion
+        target.transform.position = transform.position;
+        if (rb != null && target.rb != null)
+            target.rb.linearVelocity = rb.linearVelocity;
+
+        // Copy facing direction
+        if (sprite != null && target.sprite != null)
+            target.sprite.flipX = sprite.flipX;
+
+        // Copy general state
+        target.isGrounded = isGrounded;
+        target.jumpCount = jumpCount;
+
+        // Copy optional movement states
+        target.isSliding = isSliding;
+        target.isSlideJumping = isSlideJumping;
+        target.retainedHorizontalSpeed = retainedHorizontalSpeed;
+        target.slideJumpTimer = slideJumpTimer;
+        target.isGroundPounding = isGroundPounding;
     }
     #endregion
+
 }

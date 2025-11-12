@@ -2,49 +2,32 @@ using UnityEngine;
 
 public class GroundCheck : MonoBehaviour
 {
-    #region Variables
-    PlayerMovement player;
+    [Header("Ground Check Settings")]
     [SerializeField] Vector2 boxSize = new Vector2(0.3f, 0.05f);
-    [SerializeField] float castDistance = 0.05f;
-    [SerializeField] LayerMask groundLayers; // combine Ground + Platform in Inspector
-    #endregion
+    [SerializeField] float castDistance = 0.1f;
+    [SerializeField] LayerMask groundLayers;
 
-    #region Unity Methods
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        player = GetComponentInParent<PlayerMovement>();
-    }
+    public bool isGrounded { get; private set; }
 
-    // Update is called once per frame
-    void Update()
+    private void FixedUpdate()
     {
         CheckGround();
     }
-    #endregion
 
-    #region Custom Methods
-    // Checks if the player is grounded, and sets the isGrounded variable accordingly in the PlayerMovement script
     void CheckGround()
     {
         Vector2 origin = transform.position;
-        Vector2 direction = Vector2.down;
+        RaycastHit2D hit = Physics2D.BoxCast(origin, boxSize, 0f, Vector2.down, castDistance, groundLayers);
+        isGrounded = hit.collider != null;
 
-        // Perform a boxcast downward to check for ground
-        RaycastHit2D hit = Physics2D.BoxCast(origin, boxSize, 0f, direction, castDistance, groundLayers);
-
-        bool grounded = hit.collider != null;
-        player.isGrounded = grounded;
-
-        // Debug visualization
-        Color rayColor = grounded ? Color.green : Color.red;
-        Debug.DrawRay(origin, direction * castDistance, rayColor);
+        // Debug
+        Color rayColor = isGrounded ? Color.green : Color.red;
+        Debug.DrawRay(origin, Vector2.down * castDistance, rayColor);
     }
 
-    void OnDrawGizmosSelected()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(transform.position - Vector3.up * castDistance, boxSize);
     }
-    #endregion
 }

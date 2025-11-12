@@ -9,8 +9,8 @@ public class WorldShiftManager : MonoBehaviour
     [SerializeField] private GameObject nightObjectsParent;
 
     [Header("Player Prefabs (Separate Day/Night)")]
-    [SerializeField] private GameObject dayPlayerPrefab;
-    [SerializeField] private GameObject nightPlayerPrefab;
+    [SerializeField] private PlayerMovement dayPlayerPrefab;
+    [SerializeField] private PlayerMovement nightPlayerPrefab;
 
     [Header("Optional Visuals")]
     public Color dayAmbientColor = Color.white;
@@ -18,21 +18,21 @@ public class WorldShiftManager : MonoBehaviour
     public float transitionSpeed = 1.5f;
 
     [Header("Restrictions")]
-    public bool canShift = false; // <� new flag!
+    public bool canShift = false;
 
-    void Start()
+    private void Start()
     {
         UpdateWorldState();
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Tab) && canShift)
         {
             ToggleWorldState();
         }
 
-        // Smoothly blend ambient light color
+        // Smooth ambient color transition
         RenderSettings.ambientLight = Color.Lerp(
             RenderSettings.ambientLight,
             isDay ? dayAmbientColor : nightAmbientColor,
@@ -45,34 +45,15 @@ public class WorldShiftManager : MonoBehaviour
         canShift = value;
     }
 
-    void ToggleWorldState()
+    private void ToggleWorldState()
     {
-        // Determine current and target player prefabs
-        GameObject fromPlayer = isDay ? dayPlayerPrefab : nightPlayerPrefab;
-        GameObject toPlayer = isDay ? nightPlayerPrefab : dayPlayerPrefab;
+        PlayerMovement fromPlayer = isDay ? dayPlayerPrefab : nightPlayerPrefab;
+        PlayerMovement toPlayer = isDay ? nightPlayerPrefab : dayPlayerPrefab;
 
         if (fromPlayer != null && toPlayer != null)
         {
-            // Copy world position & rotation
-            toPlayer.transform.position = fromPlayer.transform.position;
-            toPlayer.transform.rotation = fromPlayer.transform.rotation;
-
-            // --- NEW: Copy sprite facing direction ---
-            SpriteRenderer fromRenderer = fromPlayer.GetComponentInChildren<SpriteRenderer>();
-            SpriteRenderer toRenderer = toPlayer.GetComponentInChildren<SpriteRenderer>();
-            if (fromRenderer != null && toRenderer != null)
-            {
-                toRenderer.flipX = fromRenderer.flipX;
-            }
-
-            // Copy Rigidbody2D movement if they have physics
-            Rigidbody2D fromRb = fromPlayer.GetComponentInChildren<Rigidbody2D>();
-            Rigidbody2D toRb = toPlayer.GetComponentInChildren<Rigidbody2D>();
-            if (fromRb && toRb)
-            {
-                toRb.linearVelocity = fromRb.linearVelocity;
-                toRb.angularVelocity = fromRb.angularVelocity;
-            }
+            // Copy full player state to the new prefab
+            fromPlayer.CopyStateTo(toPlayer);
         }
 
         // Switch world state
@@ -83,7 +64,7 @@ public class WorldShiftManager : MonoBehaviour
         WorldShiftEvents.Invoke(isDay);
     }
 
-    void UpdateWorldState()
+    private void UpdateWorldState()
     {
         // Toggle environment
         if (dayObjectsParent != null)
@@ -93,8 +74,8 @@ public class WorldShiftManager : MonoBehaviour
 
         // Toggle player prefabs
         if (dayPlayerPrefab != null)
-            dayPlayerPrefab.SetActive(isDay);
+            dayPlayerPrefab.gameObject.SetActive(isDay);
         if (nightPlayerPrefab != null)
-            nightPlayerPrefab.SetActive(!isDay);
+            nightPlayerPrefab.gameObject.SetActive(!isDay);
     }
 }

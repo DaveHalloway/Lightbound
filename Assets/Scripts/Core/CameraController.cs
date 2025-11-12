@@ -3,54 +3,81 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [Header("Follow Targets")]
-    [SerializeField] Transform dayPlayer;
-    [SerializeField] Transform nightPlayer;
+    [SerializeField] private Transform dayPlayer;
+    [SerializeField] private Transform nightPlayer;
 
     [Header("Camera Follow Settings")]
-    [SerializeField] float followSpeed = 5f;
-    [SerializeField] Vector2 offset = Vector2.zero;
+    [SerializeField] private float followSpeed = 5f;
+    [SerializeField] private Vector2 offset = Vector2.zero;
 
     [Header("Look Ahead")]
-    [SerializeField] float aheadDistance = 2f;
-    [SerializeField] float aheadSpeed = 3f;
+    [SerializeField] private float aheadDistance = 2f;
+    [SerializeField] private float aheadSpeed = 3f;
 
-    Transform currentTarget;
-    float lookAheadX;
+    private Transform currentTarget;
+    private float lookAheadX;
+    private float lastTargetX;
 
-    void Start()
+    private void Start()
     {
+        // Automatically assign target based on current world state
         currentTarget = WorldShiftManager.isDay ? dayPlayer : nightPlayer;
+        lastTargetX = currentTarget != null ? currentTarget.position.x : 0f;
 
-        // Subscribe to day/night change event
+        // Subscribe to world state changes
         WorldShiftEvents.OnWorldShift += OnWorldShift;
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
-        // Always unsubscribe
+        // Unsubscribe to avoid memory leaks
         WorldShiftEvents.OnWorldShift -= OnWorldShift;
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         if (currentTarget == null) return;
 
-        float direction = Mathf.Sign(currentTarget.localScale.x);
-        float targetLookAhead = aheadDistance * direction;
+        // --- Look-ahead calculation ---
+        float deltaX = currentTarget.position.x - lastTargetX;
+        lastTargetX = currentTarget.position.x;
+
+        // Smoothly move look-ahead based on direction of motion
+        float targetLookAhead = Mathf.Sign(deltaX) * aheadDistance;
         lookAheadX = Mathf.Lerp(lookAheadX, targetLookAhead, Time.deltaTime * aheadSpeed);
 
-        Vector3 targetPosition = new Vector3(
+        // --- Calculate new camera position ---
+        Vector3 desiredPos = new Vector3(
             currentTarget.position.x + lookAheadX + offset.x,
             currentTarget.position.y + offset.y,
             transform.position.z
         );
 
-        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * followSpeed);
+        // Smooth camera movement
+        transform.position = Vector3.Lerp(transform.position, desiredPos, Time.deltaTime * followSpeed);
     }
 
-    void OnWorldShift(bool isDay)
+    private void OnWorldShift(bool isDay)
     {
+        // Switch camera target when world changes
         currentTarget = isDay ? dayPlayer : nightPlayer;
+
+        if (currentTarget == null)
+        {
+            Debug.LogWarning("CameraController: Target player not assigned for current state!");
+            return;
+        }
+
+        // Snap camera immediately to prevent a visible jump
+        Vector3 snapPos = new Vector3(
+            currentTarget.position.x + offset.x,
+            currentTarget.position.y + offset.y,
+            transform.position.z
+        );
+        transform.position = snapPos;
+
+        lastTargetX = currentTarget.position.x;
+
         Debug.Log($"Camera now following: {currentTarget.name}");
     }
 }
