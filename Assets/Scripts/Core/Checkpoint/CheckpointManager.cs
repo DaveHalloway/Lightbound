@@ -11,12 +11,12 @@ public class CheckpointManager : MonoBehaviour
     [SerializeField] private float respawnDelay = 0.5f;
     [SerializeField] private bool freezeDuringRespawn = true;
 
-    private Transform player;
-    private Rigidbody2D rb;
+    [Header("Player References")]
+    [SerializeField] private GameObject dayPlayer;
+    [SerializeField] private GameObject nightPlayer;
 
-    // For multi-player switching
-    private GameObject[] allPlayers;
-    private int activePlayerIndex = -1;
+    private GameObject activePlayer;
+    private Rigidbody2D activeRb;
 
     private void Awake()
     {
@@ -28,60 +28,44 @@ public class CheckpointManager : MonoBehaviour
             return;
         }
 
-        // Find all possible player objects in the scene
-        allPlayers = GameObject.FindGameObjectsWithTag("Player");
-
-        if (allPlayers.Length == 0)
+        if (dayPlayer == null || nightPlayer == null)
         {
-            Debug.LogError("No GameObjects tagged 'Player' found! Please tag both Night and Day players.");
-            return;
+            GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
+            foreach (GameObject player in allPlayers)
+            {
+                if (player.name.ToLower().Contains("day"))
+                    dayPlayer = player;
+                else if (player.name.ToLower().Contains("night"))
+                    nightPlayer = player;
+            }
         }
 
-        // Automatically set the active one (the one currently enabled)
         UpdateActivePlayerReference();
     }
 
     private void Start()
     {
-        if (player != null)
-            currentCheckpoint = player.position;
+        if (activePlayer != null)
+            currentCheckpoint = activePlayer.transform.position;
     }
 
     private void Update()
     {
-        // Detect if you switched players mid-game
-        if (HasActivePlayerChanged())
-        {
-            UpdateActivePlayerReference();
-            Debug.Log("? Active player switched to: " + player.name);
-        }
-    }
-
-    private bool HasActivePlayerChanged()
-    {
-        for (int i = 0; i < allPlayers.Length; i++)
-        {
-            if (allPlayers[i].activeInHierarchy && i != activePlayerIndex)
-                return true;
-        }
-        return false;
+        UpdateActivePlayerReference();
     }
 
     private void UpdateActivePlayerReference()
     {
-        for (int i = 0; i < allPlayers.Length; i++)
+        if (dayPlayer != null && dayPlayer.activeInHierarchy)
         {
-            if (allPlayers[i].activeInHierarchy)
-            {
-                player = allPlayers[i].transform;
-                rb = allPlayers[i].GetComponent<Rigidbody2D>();
-                activePlayerIndex = i;
-                break;
-            }
+            activePlayer = dayPlayer;
+            activeRb = dayPlayer.GetComponent<Rigidbody2D>();
         }
-
-        if (player == null)
-            Debug.LogWarning("No active player found!");
+        else if (nightPlayer != null && nightPlayer.activeInHierarchy)
+        {
+            activePlayer = nightPlayer;
+            activeRb = nightPlayer.GetComponent<Rigidbody2D>();
+        }
     }
 
     public void SetCheckpoint(Vector3 position)
@@ -92,45 +76,80 @@ public class CheckpointManager : MonoBehaviour
 
     public void RespawnPlayer()
     {
-        if (player == null)
-        {
+        if (activePlayer == null)
             UpdateActivePlayerReference();
-        }
 
-        if (player != null)
-            StartCoroutine(RespawnRoutine());
-        else
-            Debug.LogError("No active player found to respawn!");
+        StartCoroutine(RespawnRoutine());
     }
 
     private IEnumerator RespawnRoutine()
     {
-        PlayerMovement movementScript = player.GetComponent<PlayerMovement>();
-        if (movementScript != null)
-            movementScript.enabled = false;
+        DisableMovement(dayPlayer);
+        DisableMovement(nightPlayer);
 
+        yield return new WaitForSeconds(respawnDelay);
+
+        MoveEvenIfInactive(dayPlayer);
+        MoveEvenIfInactive(nightPlayer);
+
+        Debug.Log("Both players moved to checkpoint: " + currentCheckpoint);
+
+        yield return new WaitForFixedUpdate();
+
+        EnableMovement(dayPlayer);
+        EnableMovement(nightPlayer);
+    }
+
+    private void DisableMovement(GameObject player)
+    {
+        if (player == null) return;
+
+        PlayerMovement movement = player.GetComponent<PlayerMovement>();
+        if (movement != null)
+            movement.enabled = false;
+
+        Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
         if (freezeDuringRespawn && rb != null)
         {
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0;
             rb.bodyType = RigidbodyType2D.Kinematic;
         }
+    }
 
-        yield return new WaitForSeconds(respawnDelay);
+    private void EnableMovement(GameObject player)
+    {
+        if (player == null) return;
 
-        if (rb != null)
-            rb.MovePosition(currentCheckpoint);
-        else
-            player.position = currentCheckpoint;
-
-        Debug.Log("? " + player.name + " teleported to " + currentCheckpoint);
-
-        yield return new WaitForFixedUpdate();
-
+        Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
         if (freezeDuringRespawn && rb != null)
             rb.bodyType = RigidbodyType2D.Dynamic;
 
-        if (movementScript != null)
-            movementScript.enabled = true;
+        PlayerMovement movement = player.GetComponent<PlayerMovement>();
+        if (movement != null)
+            movement.enabled = true;
+    }
+
+    private void MoveEvenIfInactive(GameObject player)
+    {
+        if (player == null) return;
+
+        bool wasInactive = !player.activeSelf;
+
+        if (wasInactive)
+            player.SetActive(true);
+
+        player.transform.position = currentCheckpoint;
+
+        // Force physics sync
+        if (player.TryGetComponent<Rigidbody2D>(out var rb))
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0;
+            rb.position = currentCheckpoint;
+        }
+
+        if (wasInactive)
+            player.SetActive(false);
     }
 }

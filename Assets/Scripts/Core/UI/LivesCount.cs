@@ -1,6 +1,7 @@
-using TMPro;
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using TMPro;
 
 public class LivesCount : MonoBehaviour
 {
@@ -60,10 +61,6 @@ public class LivesCount : MonoBehaviour
         {
             instance.tmpText.text = "x" + livesAmount;
         }
-        else
-        {
-            Debug.LogWarning("LivesCount instance or tmpText is missing!");
-        }
     }
 
     public static void LoseLife()
@@ -72,22 +69,30 @@ public class LivesCount : MonoBehaviour
 
         livesAmount--;
         UpdateTextUI();
-        Debug.Log("Life lost! Remaining: " + livesAmount);
 
         if (instance != null)
             instance.StartCoroutine(instance.InvulnerabilityRoutine());
 
+        Debug.Log("Life lost! Remaining: " + livesAmount);
+
         if (livesAmount <= 0)
         {
-            Debug.Log("Game Over!");
-            // TODO: Game-over logic
+            Debug.Log("Game Over! Resetting scene...");
+            ResetGame();
         }
     }
 
-    public static void GainLife()
+    public static void GainLife(int amount = 1)
     {
-        livesAmount++;
+        livesAmount += amount;
         UpdateTextUI();
+        Debug.Log("Life gained! Total: " + livesAmount);
+    }
+
+    private static void ResetGame()
+    {
+        livesAmount = 3; // Reset lives
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
     #endregion
 

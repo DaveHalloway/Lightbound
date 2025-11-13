@@ -24,7 +24,7 @@ public class ScoreCounter : MonoBehaviour
     public static void UpdateTextUI()
     {
         if (instance != null && instance.tmpText != null)
-            instance.tmpText.text = "Coins: " + coinAmount;
+            instance.tmpText.text = "" + coinAmount;
     }
 
     public static void AddCoin(int amount = 1)

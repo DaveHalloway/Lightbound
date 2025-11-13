@@ -5,7 +5,6 @@ using TMPro;
 
 public class PlayerAttack : MonoBehaviour
 {
-    #region Variables
     [Header("Snowball Settings")]
     public GameObject snowballPrefab;
     public Transform firePoint;
@@ -14,7 +13,7 @@ public class PlayerAttack : MonoBehaviour
     public float snowballSpeed = 10f;
 
     [Header("Recharge Settings")]
-    public float rechargeRate = 2f;        // Time to make 1 snowball
+    public float rechargeRate = 2f;
     private float rechargeTimer = 0f;
     public bool isNearSnowPile = false;
 
@@ -23,18 +22,16 @@ public class PlayerAttack : MonoBehaviour
     public Image chargeBarFill;
     public TextMeshProUGUI ammoCounter;
 
-    [Header("References")]
     private PlayerMovement playerMovement;
-
     private int currentSnowballs;
     private float lastShootTime = -10f;
-    #endregion
 
     void Start()
     {
         currentSnowballs = maxSnowballs;
         if (chargeBarParent != null)
             chargeBarParent.SetActive(false);
+
         UpdateAmmoUI();
 
         playerMovement = GetComponent<PlayerMovement>();
@@ -64,13 +61,13 @@ public class PlayerAttack : MonoBehaviour
 
     void ShootSnowball()
     {
-        if (snowballPrefab == null || firePoint == null) return;
+        if (snowballPrefab == null || firePoint == null || playerMovement == null) return;
 
         GameObject snowball = Instantiate(snowballPrefab, firePoint.position, Quaternion.identity);
         Snowball sb = snowball.GetComponent<Snowball>();
         if (sb != null)
         {
-            Vector2 direction = playerMovement.IsFacingRight() ? Vector2.right : Vector2.left;
+            Vector2 direction = playerMovement.IsFacingRight ? Vector2.right : Vector2.left;
             sb.Launch(direction, snowballSpeed);
         }
     }
@@ -85,8 +82,6 @@ public class PlayerAttack : MonoBehaviour
                 chargeBarParent.SetActive(true);
 
             rechargeTimer += Time.deltaTime;
-
-            // Calculate fill (fraction of current ammo + partial progress)
             float targetFill = ((float)currentSnowballs + rechargeTimer / rechargeRate) / maxSnowballs;
             targetFill = Mathf.Clamp01(targetFill);
 
@@ -115,7 +110,7 @@ public class PlayerAttack : MonoBehaviour
     void UpdateAmmoUI()
     {
         if (ammoCounter != null)
-            ammoCounter.text = currentSnowballs.ToString() + "/3";
+            ammoCounter.text = currentSnowballs.ToString() + "/" + maxSnowballs;
     }
 
     void MirrorFirePoint()
@@ -123,12 +118,7 @@ public class PlayerAttack : MonoBehaviour
         if (firePoint == null || playerMovement == null) return;
 
         Vector3 localPos = firePoint.localPosition;
-
-        if (playerMovement.IsFacingRight())
-            localPos.x = Mathf.Abs(localPos.x);
-        else
-            localPos.x = -Mathf.Abs(localPos.x);
-
+        localPos.x = playerMovement.IsFacingRight ? Mathf.Abs(localPos.x) : -Mathf.Abs(localPos.x);
         firePoint.localPosition = localPos;
     }
     #endregion

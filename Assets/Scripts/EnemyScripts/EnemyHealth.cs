@@ -8,14 +8,13 @@ public class EnemyHealth : MonoBehaviour
     private bool isDead = false;
 
     [Header("Optional Visuals")]
-    public Animator animator;         // optional
-    public GameObject deathEffect;    // optional particle or VFX prefab
-    public float deathDelay = 0.5f;   // how long to wait before destroy
+    public Animator animator;
+    public GameObject deathEffect;
+    public float deathDelay = 0.5f;
 
     void Start()
     {
         currentHealth = maxHealth;
-
         if (animator == null)
             animator = GetComponent<Animator>();
     }
@@ -23,7 +22,6 @@ public class EnemyHealth : MonoBehaviour
     public void TakeDamage(int damage)
     {
         if (isDead) return;
-
         currentHealth -= damage;
         Debug.Log($"{gameObject.name} took {damage} damage! HP: {currentHealth}");
 
@@ -40,14 +38,11 @@ public class EnemyHealth : MonoBehaviour
         isDead = true;
 
         Debug.Log($"{gameObject.name} has died.");
-
-        // Optional visual feedback
         if (animator != null)
             animator.SetTrigger("Die");
         if (deathEffect != null)
             Instantiate(deathEffect, transform.position, Quaternion.identity);
 
-        // Disable all colliders and movement so it stops interacting
         Collider2D[] colliders = GetComponentsInChildren<Collider2D>();
         foreach (Collider2D col in colliders)
             col.enabled = false;
@@ -59,7 +54,6 @@ public class EnemyHealth : MonoBehaviour
             rb.isKinematic = true;
         }
 
-        // Destroy entire enemy object after short delay
         Destroy(gameObject, deathDelay);
     }
 }
