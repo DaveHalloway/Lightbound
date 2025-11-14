@@ -4,6 +4,7 @@ using UnityEngine;
 public class CheckpointManager : MonoBehaviour
 {
     public static CheckpointManager Instance;
+    public static System.Action OnRespawned;
 
     private Vector3 currentCheckpoint;
 
@@ -31,16 +32,17 @@ public class CheckpointManager : MonoBehaviour
         if (dayPlayer == null || nightPlayer == null)
         {
             GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
-            foreach (GameObject player in allPlayers)
+
+            foreach (GameObject p in allPlayers)
             {
-                if (player.name.ToLower().Contains("day"))
-                    dayPlayer = player;
-                else if (player.name.ToLower().Contains("night"))
-                    nightPlayer = player;
+                if (p.name.ToLower().Contains("day"))
+                    dayPlayer = p;
+                else if (p.name.ToLower().Contains("night"))
+                    nightPlayer = p;
             }
         }
 
-        UpdateActivePlayerReference();
+        UpdateActivePlayer();
     }
 
     private void Start()
@@ -51,10 +53,10 @@ public class CheckpointManager : MonoBehaviour
 
     private void Update()
     {
-        UpdateActivePlayerReference();
+        UpdateActivePlayer();
     }
 
-    private void UpdateActivePlayerReference()
+    private void UpdateActivePlayer()
     {
         if (dayPlayer != null && dayPlayer.activeInHierarchy)
         {
@@ -68,17 +70,13 @@ public class CheckpointManager : MonoBehaviour
         }
     }
 
-    public void SetCheckpoint(Vector3 position)
+    public void SetCheckpoint(Vector3 pos)
     {
-        currentCheckpoint = position;
-        Debug.Log("Checkpoint updated to " + currentCheckpoint);
+        currentCheckpoint = pos;
     }
 
     public void RespawnPlayer()
     {
-        if (activePlayer == null)
-            UpdateActivePlayerReference();
-
         StartCoroutine(RespawnRoutine());
     }
 
@@ -89,24 +87,23 @@ public class CheckpointManager : MonoBehaviour
 
         yield return new WaitForSeconds(respawnDelay);
 
-        MoveEvenIfInactive(dayPlayer);
-        MoveEvenIfInactive(nightPlayer);
-
-        Debug.Log("Both players moved to checkpoint: " + currentCheckpoint);
+        MovePlayer(dayPlayer);
+        MovePlayer(nightPlayer);
 
         yield return new WaitForFixedUpdate();
 
         EnableMovement(dayPlayer);
         EnableMovement(nightPlayer);
+
+        OnRespawned?.Invoke();
     }
 
     private void DisableMovement(GameObject player)
     {
         if (player == null) return;
 
-        PlayerMovement movement = player.GetComponent<PlayerMovement>();
-        if (movement != null)
-            movement.enabled = false;
+        PlayerMovement pm = player.GetComponent<PlayerMovement>();
+        if (pm != null) pm.enabled = false;
 
         Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
         if (freezeDuringRespawn && rb != null)
@@ -125,31 +122,26 @@ public class CheckpointManager : MonoBehaviour
         if (freezeDuringRespawn && rb != null)
             rb.bodyType = RigidbodyType2D.Dynamic;
 
-        PlayerMovement movement = player.GetComponent<PlayerMovement>();
-        if (movement != null)
-            movement.enabled = true;
+        PlayerMovement pm = player.GetComponent<PlayerMovement>();
+        if (pm != null) pm.enabled = true;
     }
 
-    private void MoveEvenIfInactive(GameObject player)
+    private void MovePlayer(GameObject player)
     {
         if (player == null) return;
 
         bool wasInactive = !player.activeSelf;
-
-        if (wasInactive)
-            player.SetActive(true);
+        if (wasInactive) player.SetActive(true);
 
         player.transform.position = currentCheckpoint;
 
-        // Force physics sync
-        if (player.TryGetComponent<Rigidbody2D>(out var rb))
+        if (player.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
         {
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0;
             rb.position = currentCheckpoint;
         }
 
-        if (wasInactive)
-            player.SetActive(false);
+        if (wasInactive) player.SetActive(false);
     }
 }

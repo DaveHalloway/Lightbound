@@ -1,40 +1,37 @@
-using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro;
+using System.Collections;
 
 public class LivesCount : MonoBehaviour
 {
-    #region Variables
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI tmpText;
     public static int livesAmount = 3;
 
-    public static LivesCount instance;
+    public static LivesCount Instance;
 
     [Header("Invulnerability")]
     private static bool isInvulnerable = false;
     private static float invulnerabilityTime = 1.0f;
     private static float blinkInterval = 0.15f;
 
-    [Header("Player Sprite")]
+    [Header("Player Sprites")]
     [SerializeField] private SpriteRenderer playerSprite;
-
-    [Header("Day/Night Followers")]
     [SerializeField] private SpriteRenderer dayFollower;
     [SerializeField] private SpriteRenderer nightFollower;
 
     private bool isNightMode = false;
-    #endregion
 
-    #region Unity Methods
     private void Awake()
     {
-        // Singleton pattern
-        if (instance == null)
-            instance = this;
-        else if (instance != this)
+        if (Instance == null)
+            Instance = this;
+        else
+        {
             Destroy(gameObject);
+            return;
+        }
 
         if (tmpText == null)
             tmpText = GetComponent<TextMeshProUGUI>();
@@ -46,21 +43,25 @@ public class LivesCount : MonoBehaviour
     private void OnEnable()
     {
         WorldShiftEvents.OnWorldShift += HandleWorldShift;
+        CheckpointManager.OnRespawned += HandleRespawn;
     }
 
     private void OnDisable()
     {
         WorldShiftEvents.OnWorldShift -= HandleWorldShift;
+        CheckpointManager.OnRespawned -= HandleRespawn;
     }
-    #endregion
 
-    #region Text & Lives
+    private void HandleRespawn()
+    {
+        UpdateFollowerSprites();
+        UpdateTextUI();
+    }
+
     public static void UpdateTextUI()
     {
-        if (instance != null && instance.tmpText != null)
-        {
-            instance.tmpText.text = "x" + livesAmount;
-        }
+        if (Instance != null && Instance.tmpText != null)
+            Instance.tmpText.text = "x" + livesAmount;
     }
 
     public static void LoseLife()
@@ -69,34 +70,24 @@ public class LivesCount : MonoBehaviour
 
         livesAmount--;
         UpdateTextUI();
-
-        if (instance != null)
-            instance.StartCoroutine(instance.InvulnerabilityRoutine());
-
         Debug.Log("Life lost! Remaining: " + livesAmount);
 
+        if (Instance != null)
+            Instance.StartCoroutine(Instance.InvulnerabilityRoutine());
+
         if (livesAmount <= 0)
-        {
-            Debug.Log("Game Over! Resetting scene...");
-            ResetGame();
-        }
+            ResetLivesAndReloadScene();
     }
 
-    public static void GainLife(int amount = 1)
+    private static void ResetLivesAndReloadScene()
     {
-        livesAmount += amount;
-        UpdateTextUI();
-        Debug.Log("Life gained! Total: " + livesAmount);
-    }
+        livesAmount = 3;
 
-    private static void ResetGame()
-    {
-        livesAmount = 3; // Reset lives
+        WorldShiftEvents.Invoke(true); // Reset to day mode
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-    #endregion
 
-    #region Invulnerability
     private IEnumerator InvulnerabilityRoutine()
     {
         isInvulnerable = true;
@@ -127,29 +118,9 @@ public class LivesCount : MonoBehaviour
         isInvulnerable = false;
     }
 
-    public static void SetInvulnerable(bool value)
-    {
-        isInvulnerable = value;
-        if (instance != null && instance.playerSprite != null && value)
-            instance.playerSprite.enabled = true;
-    }
-
-    public static bool IsInvulnerable()
-    {
-        return isInvulnerable;
-    }
-    #endregion
-
-    #region Day/Night Handling
     private void HandleWorldShift(bool isDay)
     {
-        // Convert to night mode for the sprite switch
-        SetWorldState(!isDay);
-    }
-
-    public void SetWorldState(bool isNight)
-    {
-        isNightMode = isNight;
+        isNightMode = !isDay;
         UpdateFollowerSprites();
     }
 
@@ -160,5 +131,10 @@ public class LivesCount : MonoBehaviour
         if (nightFollower != null)
             nightFollower.enabled = isNightMode;
     }
-    #endregion
+
+    public static void GainLife()
+    {
+        livesAmount++;
+        UpdateTextUI();
+    }
 }
